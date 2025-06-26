@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusinessAI Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading screen while checking authentication -->
+    <div id="authLoader" class="auth-loader">
+        <div class="loader-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Checking authentication...</p>
+        </div>
+    </div>
+
+    <div id="dashboardContent" class="dashboard-container" style="display: none;">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-brain"></i>
+                    <h2>BusinessAI</h2>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span id="userName">Welcome, User</span>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="dashboard-nav">
+            <button class="nav-btn active" onclick="showSection('upload')" data-section="upload">
+                <i class="fas fa-upload"></i>
+                <span>Upload Data</span>
+            </button>
+            <button class="nav-btn" onclick="showSection('testing')" data-section="testing">
+                <i class="fas fa-vial"></i>
+                <span>Data Testing</span>
+            </button>
+            <button class="nav-btn" onclick="showSection('analytics')" data-section="analytics">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Upload Data Section -->
+            <section id="uploadSection" class="dashboard-section active">
+                <div class="section-header">
+                    <h3>Upload Your Business Data</h3>
+                    <p>Get started by uploading your data files or scraping from URLs with AI-powered extraction</p>
+                </div>
+                
+                <div class="upload-container">
+                    <!-- File Upload - Left Side -->
+                    <div class="upload-card">
+                        <div class="upload-header">
+                            <i class="fas fa-file-upload"></i>
+                            <h4>Upload Files</h4>
+                        </div>
+                        
+                        <!-- Content Type Selection -->
+                        <div class="content-type-section">
+                            <label for="fileContentType" class="content-type-label">
+                                <i class="fas fa-tag"></i>
+                                Content Type
+                            </label>
+                            <select id="fileContentType" class="content-type-select">
+                                <option value="">Select content type...</option>
+                                <option value="products">🛍️ Products (e-commerce items)</option>
+                                <option value="services">🔧 Services (service offerings)</option>
+                                <option value="contact">📞 Contact Information</option>
+                                <option value="about">🏢 About/Company Info</option>
+                                <option value="faq">❓ FAQs</option>
+                                <option value="policies">📋 Policies (Terms, Privacy)</option>
+                                <option value="general">📄 General Content</option>
+                            </select>
+                        </div>
+                        
+                        <div class="file-drop-zone" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drag & drop files here or <span class="link-text">browse</span></p>
+                            <small>Supports PDF, DOCX, TXT files up to 16MB</small>
+                        </div>
+                        <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" style="display: none;">
+                        <div id="fileList" class="file-list"></div>
+                        <button class="primary-btn" onclick="uploadFiles()">
+                            <i class="fas fa-upload"></i>
+                            Upload & Process Files
+                        </button>
+                    </div>
+
+                    <!-- URL Scraping - Right Side -->
+                    <div class="upload-card">
+                        <div class="upload-header">
+                            <i class="fas fa-globe"></i>
+                            <h4>Scrape from URL</h4>
+                        </div>
+                        
+                        <!-- Content Type Selection -->
+                        <div class="content-type-section">
+                            <label for="urlContentType" class="content-type-label">
+                                <i class="fas fa-tag"></i>
+                                Content Type
+                            </label>
+                            <select id="urlContentType" class="content-type-select">
+                                <option value="">Select content type...</option>
+                                <option value="products">🛍️ Products (e-commerce items)</option>
+                                <option value="services">🔧 Services (service offerings)</option>
+                                <option value="contact">📞 Contact Information</option>
+                                <option value="about">🏢 About/Company Info</option>
+                                <option value="faq">❓ FAQs</option>
+                                <option value="policies">📋 Policies (Terms, Privacy)</option>
+                                <option value="general">📄 General Content</option>
+                            </select>
+                        </div>
+                        
+                        <div class="url-input-section">
+                            <div class="input-group">
+                                <i class="fas fa-link"></i>
+                                <input type="url" id="scrapeUrl" placeholder="Enter website URL to scrape data">
+                            </div>
+                        </div>
+                        <button class="primary-btn" onclick="scrapeUrl()">
+                            <i class="fas fa-download"></i>
+                            Start AI Extraction
+                        </button>
+                        <div id="scrapeProgress" class="progress-bar" style="display: none;">
+                            <div class="progress-fill"></div>
+                        </div>
+                        
+                        <!-- Processing Status -->
+                        <div id="processingStatus" class="processing-status" style="display: none;">
+                            <div class="status-content">
+                                <i class="fas fa-brain"></i>
+                                <span>AI is processing your data...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Results Section -->
+                <div id="resultsSection" class="results-section" style="display: none;">
+                    <div class="section-header">
+                        <h4>Extraction Results</h4>
+                        <div class="results-controls">
+                            <button class="icon-btn" onclick="exportResults()">
+                                <i class="fas fa-download"></i>
+                                Export JSON
+                            </button>
+                            <button class="icon-btn" onclick="clearResults()">
+                                <i class="fas fa-trash"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div id="resultsContent" class="results-content"></div>
+                </div>
+            </section>
+
+            <!-- Data Testing Section -->
+            <section id="testingSection" class="dashboard-section">
+                <div class="section-header">
+                    <h3>Data Management & Testing</h3>
+                    <p>Review, edit, and test your business data with our AI assistant</p>
+                </div>
+                
+                <div class="testing-container">
+                    <!-- Data Management - Left Side -->
+                    <div class="data-management-card">
+                        <div class="card-header">
+                            <h4>Your Business Data</h4>
+                            <div class="data-controls">
+                                <button class="icon-btn" onclick="fetchData()" title="Refresh Data">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <button class="icon-btn" onclick="exportResults()" title="Export Data">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="icon-btn" onclick="showAddDataModal()" title="Add New Entry">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Data Filters -->
+                        <div class="data-filters">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="dataSearch" placeholder="Search in your data..." onkeyup="filterData()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="contentTypeFilter" onchange="filterData()">
+                                    <option value="">All Content Types</option>
+                                    <option value="products">Products</option>
+                                    <option value="services">Services</option>
+                                    <option value="contact">Contact Info</option>
+                                    <option value="about">About/Company</option>
+                                    <option value="faq">FAQs</option>
+                                    <option value="policies">Policies</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="data-table-container">
+                            <table id="dataTable" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Content Type</th>
+                                        <th>Product Name</th>
+                                        <th>Description</th>
+                                        <th>Price</th>
+                                        <th>Category</th>
+                                        <th>Availability</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data rows will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Bulk Actions -->
+                        <div class="bulk-actions">
+                            <button class="secondary-btn" onclick="selectAllRows()">
+                                <i class="fas fa-check-square"></i>
+                                Select All
+                            </button>
+                            <button class="danger-btn" onclick="deleteSelectedRows()" disabled>
+                                <i class="fas fa-trash"></i>
+                                Delete Selected
+                            </button>
+                            <button class="primary-btn store-chroma-btn" onclick="storeInChromaDB()">
+                                <i class="fas fa-database"></i>
+                                Store in Database
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Assistant - Right Side -->
+                    <div class="chatbot-card">
+                        <div class="card-header">
+                            <h4>AI Assistant</h4>
+                            <div class="chatbot-status">
+                                <span class="status-dot online"></span>
+                                <span>Ready to Help</span>
+                            </div>
+                        </div>
+                        <div class="chatbot-content">
+                            <div class="chat-messages" id="chatMessages">
+                                <div class="message bot">
+                                    <div class="message-avatar">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="message-content">
+                                        <p>Hi! 👋 I'm your bakery assistant. Ask me about our products, prices, or offers!</p>
+                                    </div>
+                                    <div class="message-timestamp">
+                                        Just now
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-input">
+                                <input type="text" id="chatInput" placeholder="Ask me about our cakes, brownies, or any treats...">
+                                <button class="send-btn" onclick="sendMessage()">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                                <button class="test-btn" onclick="testChat()">
+                                    Test Chat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analyticsSection" class="dashboard-section">
+                <div class="section-header">
+                    <h3>Business Analytics & Insights</h3>
+                    <p>Get AI-powered insights about your business</p>
+                </div>
+                
+                <div class="analytics-container">
+                    <!-- Insights Card - Left Side -->
+                    <div class="insights-card">
+                        <div class="card-header">
+                            <h4>Business Insights</h4>
+                        </div>
+                        <div class="insights-content">
+                            <div class="insights-input">
+                                <input type="text" id="insightQuery" placeholder="Enter your business question...">
+                                <button class="primary-btn" onclick="getInsights()">
+                                    <i class="fas fa-chart-line"></i>
+                                    Get Insights
+                                </button>
+                            </div>
+                            <div id="insightsResults" class="insights-results">
+                                <!-- Insights will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings - Right Side -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h4>Integration Settings</h4>
+                        </div>
+                        <div class="settings-content">
+                            <!-- Telegram Bot Settings -->
+                            <div class="setting-group">
+                                <h4><i class="fab fa-telegram"></i> Telegram Bot</h4>
+                                <p class="setting-description">Connect your Telegram bot to answer customer queries automatically using AI.</p>
+                                
+                                <div class="setting-item">
+                                    <label class="setting-label">
+                                        <input type="checkbox" id="telegramEnabled" onchange="toggleTelegramSettings()">
+                                        <span class="checkmark"></span>
+                                        Enable Telegram Bot
+                                    </label>
+                                </div>
+                                
+                                <div class="setting-item" id="telegramTokenGroup" style="display: none;">
+                                    <label for="telegramToken">Bot Token</label>
+                                    <input type="password" id="telegramToken" placeholder="Enter your Telegram bot token">
+                                    <small class="setting-help">
+                                        Get this from @BotFather on Telegram. Your bot will answer questions about your business data.
+                                    </small>
+                                </div>
+                                
+                                <div class="setting-actions">
+                                    <button class="secondary-btn" onclick="saveTelegramSettings()">
+                                        <i class="fas fa-save"></i> Save Settings
+                                    </button>
+                                    <button class="success-btn" onclick="testTelegramBot()" id="testBotBtn" style="display: none;">
+                                        <i class="fas fa-paper-plane"></i> Test Bot
+                                    </button>
+                                    <button class="info-btn" onclick="pollTelegramMessages()" id="pollBtn" style="display: none;">
+                                        <i class="fas fa-sync-alt"></i> Poll Messages
+                                    </button>
+                                    <button class="warning-btn" onclick="clearTelegramHistory()" id="clearBtn" style="display: none;">
+                                        <i class="fas fa-trash"></i> Clear History
+                                    </button>
+                                </div>
+                                
+                                <!-- Status Display -->
+                                <div id="telegramStatus" style="display: none;">
+                                    <div class="status-indicator">
+                                        <div id="telegramStatusDot" class="status-dot"></div>
+                                        <span id="telegramStatusText">Checking status...</span>
+                                    </div>
+                                    <div id="telegramBotInfo" style="display: none;">
+                                        <small>Bot: <span id="telegramBotName"></span></small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- WhatsApp Integration -->
+                            <div class="setting-group">
+                                <h5>WhatsApp Business API</h5>
+                                <div class="setting-item">
+                                    <span>Enable WhatsApp Integration</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="whatsappEnabled">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </div>
+                                <input type="text" id="whatsappToken" placeholder="Enter WhatsApp API Token" class="setting-input">
+                                <button class="secondary-btn" onclick="saveWhatsAppSettings()">Save</button>
+                            </div>
+
+                            <!-- Webhook Configuration -->
+                            <div class="setting-group">
+                                <h5>Webhook Settings</h5>
+                                <div class="setting-item">
+                                    <span>Enable Webhooks</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="webhookEnabled">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </div>
+                                <input type="text" id="webhookUrl" placeholder="Enter Webhook URL" class="setting-input">
+                                <button class="secondary-btn" onclick="saveWebhookSettings()">Save</button>
+                            </div>
+
+                            <!-- Razorpay Integration -->
+                            <div class="setting-group">
+                                <h5>Razorpay Payment Gateway</h5>
+                                <div class="setting-item">
+                                    <span>Enable Razorpay</span>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="razorpayEnabled">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                </div>
+                                <input type="text" id="razorpayKey" placeholder="Enter Razorpay Key ID" class="setting-input">
+                                <input type="text" id="razorpaySecret" placeholder="Enter Razorpay Secret Key" class="setting-input">
+                                <button class="secondary-btn" onclick="saveRazorpaySettings()">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVMbbYxdidb-LXT96IMYfrK0eZmby0nJU",
+            authDomain: "nexusb0t.firebaseapp.com",
+            projectId: "nexusb0t",
+            storageBucket: "nexusb0t.firebasestorage.app",
+            messagingSenderId: "590738714498",
+            appId: "1:590738714498:web:7b4c6b8c8f8c8f8c8f8c8f"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Make auth available globally
+        window.auth = auth;
+        window.signOut = signOut;
+
+        // Check authentication state
+        onAuthStateChanged(auth, (user) => {
+            const authLoader = document.getElementById('authLoader');
+            const dashboardContent = document.getElementById('dashboardContent');
+            
+            if (user) {
+                // User is signed in
+                console.log('User is authenticated:', user);
+                
+                // Update UI with user info
+                const userName = document.getElementById('userName');
+                if (userName) {
+                    userName.textContent = `Welcome, ${user.displayName || user.email || 'User'}`;
+                }
+                
+                // Hide loader and show dashboard
+                authLoader.style.display = 'none';
+                dashboardContent.style.display = 'block';
+                
+                // Store user info for dashboard use
+                window.currentUser = user;
+            } else {
+                // No user is signed in, redirect to login
+                console.log('No user authenticated, redirecting to login');
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+    <script src="dashboard.js?v=1.3"></script>
+</body>
+</html> 

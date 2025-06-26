@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Settings Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="checkbox"] { width: 100%; padding: 8px; margin-bottom: 10px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .debug { background: #f8f9fa; color: #495057; border: 1px solid #dee2e6; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Telegram Settings Test</h1>
+        <p>Use this page to test if your Telegram settings are being saved properly.</p>
+        
+        <div class="form-group">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" placeholder="Enter your user ID" value="test_user_123">
+        </div>
+        
+        <div class="form-group">
+            <label for="token">Telegram Bot Token:</label>
+            <input type="text" id="token" placeholder="Enter your bot token">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="enabled"> Enable Telegram Bot
+            </label>
+        </div>
+        
+        <button onclick="saveSettings()">💾 Save Settings</button>
+        <button onclick="checkSettings()">🔍 Check Settings</button>
+        <button onclick="testBackend()">🏥 Test Backend</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:5000';
+        
+        function showResult(message, type = 'debug') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        async function testBackend() {
+            try {
+                showResult('Testing backend connectivity...', 'debug');
+                
+                const response = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Backend is working!\n\nHealth check response:\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Backend health check failed:\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Backend connection failed:\n${error.message}`, 'error');
+            }
+        }
+        
+        async function saveSettings() {
+            try {
+                const userId = document.getElementById('userId').value;
+                const token = document.getElementById('token').value;
+                const enabled = document.getElementById('enabled').checked;
+                
+                if (!userId) {
+                    showResult('❌ Please enter a User ID', 'error');
+                    return;
+                }
+                
+                if (enabled && !token) {
+                    showResult('❌ Please enter a bot token when enabling', 'error');
+                    return;
+                }
+                
+                showResult('Saving settings...', 'debug');
+                
+                const response = await fetch(`${BACKEND_URL}/api/settings/telegram`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        enabled,
+                        token,
+                        user_id: userId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult(`✅ Settings saved successfully!\n\nResponse:\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Failed to save settings:\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error saving settings:\n${error.message}`, 'error');
+            }
+        }
+        
+        async function checkSettings() {
+            try {
+                const userId = document.getElementById('userId').value;
+                
+                if (!userId) {
+                    showResult('❌ Please enter a User ID', 'error');
+                    return;
+                }
+                
+                showResult('Checking settings...', 'debug');
+                
+                const response = await fetch(`${BACKEND_URL}/api/settings/debug?user_id=${userId}`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult(`✅ Settings retrieved!\n\nUser ID: ${data.user_id}\nUser Settings:\n${JSON.stringify(data.settings, null, 2)}\n\nAll Settings:\n${JSON.stringify(data.all_settings, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Failed to retrieve settings:\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error checking settings:\n${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-generate user ID if empty
+        document.getElementById('userId').addEventListener('blur', function() {
+            if (!this.value) {
+                this.value = 'user_' + Math.random().toString(36).substr(2, 9);
+            }
+        });
+    </script>
+</body>
+</html> 

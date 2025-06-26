@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Telegram Settings Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+        input[type="text"], input[type="checkbox"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; }
+        input[type="text"]:focus { border-color: #007bff; outline: none; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 10px; margin-bottom: 10px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 6px; font-family: monospace; white-space: pre-wrap; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .debug { background: #f8f9fa; color: #495057; border: 1px solid #dee2e6; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .step { background: #e7f3ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #007bff; }
+        .step h3 { margin-top: 0; color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Manual Telegram Settings Test</h1>
+        <p>This page will help you manually save your Telegram settings and test the bot.</p>
+        
+        <div class="step">
+            <h3>Step 1: Enter Your Details</h3>
+            <p>Fill in your information below:</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="userId">User ID (from Firebase):</label>
+            <input type="text" id="userId" value="03x1ps7BrgbTESYn4xwe97ylj2F3" readonly>
+        </div>
+        
+        <div class="form-group">
+            <label for="token">Telegram Bot Token:</label>
+            <input type="text" id="token" placeholder="Enter your bot token (e.g., 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="enabled" checked> Enable Telegram Bot
+            </label>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Save Settings</h3>
+            <p>Click the button below to save your settings:</p>
+        </div>
+        
+        <button onclick="saveSettings()">💾 Save Telegram Settings</button>
+        <button onclick="checkSettings()">🔍 Check Current Settings</button>
+        <button onclick="validateBot()">🔧 Validate Bot Token</button>
+        
+        <div class="step">
+            <h3>Step 3: Test the Bot</h3>
+            <p>After saving settings, test your bot:</p>
+        </div>
+        
+        <button onclick="testBot()">🤖 Test Bot</button>
+        <button onclick="getBotInfo()">📋 Get Bot Info</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:5000';
+        
+        function showResult(message, type = 'debug') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        async function saveSettings() {
+            try {
+                const userId = document.getElementById('userId').value;
+                const token = document.getElementById('token').value;
+                const enabled = document.getElementById('enabled').checked;
+                
+                if (!token) {
+                    showResult('❌ Please enter your bot token', 'error');
+                    return;
+                }
+                
+                showResult('Saving settings...', 'debug');
+                
+                const response = await fetch(`${BACKEND_URL}/api/settings/save-debug`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        enabled: enabled,
+                        token: token
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult(`✅ Settings saved successfully!\n\nResponse:\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Failed to save settings:\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error saving settings:\n${error.message}`, 'error');
+            }
+        }
+        
+        async function checkSettings() {
+            try {
+                const userId = document.getElementById('userId').value;
+                
+                showResult('Checking settings...', 'debug');
+                
+                const response = await fetch(`${BACKEND_URL}/api/settings/debug?user_id=${userId}`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult(`✅ Settings retrieved!\n\nUser ID: ${data.user_id}\nTotal Users: ${data.total_users}\nUser Settings:\n${JSON.stringify(data.settings, null, 2)}\n\nAll Settings:\n${JSON.stringify(data.all_settings, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Failed to retrieve settings:\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error checking settings:\n${error.message}`, 'error');
+            }
+        }
+        
+        async function validateBot() {
+            try {
+                const token = document.getElementById('token').value;
+                
+                if (!token) {
+                    showResult('❌ Please enter your bot token first', 'error');
+                    return;
+                }
+                
+                showResult('Validating bot token...', 'debug');
+                
+                const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+                const data = await response.json();
+                
+                if (response.ok && data.ok) {
+                    const bot = data.result;
+                    showResult(`✅ Bot token is valid!\n\nBot Information:\n• Name: ${bot.first_name}\n• Username: @${bot.username}\n• ID: ${bot.id}\n• Can join groups: ${bot.can_join_groups ? 'Yes' : 'No'}\n• Can read all group messages: ${bot.can_read_all_group_messages ? 'Yes' : 'No'}\n• Supports inline queries: ${bot.supports_inline_queries ? 'Yes' : 'No'}\n\n✅ Your bot is ready to use!`, 'success');
+                } else {
+                    showResult(`❌ Invalid bot token:\n${JSON.stringify(data, null, 2)}\n\nPlease check your bot token with @BotFather on Telegram.`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error validating bot:\n${error.message}`, 'error');
+            }
+        }
+        
+        async function testBot() {
+            try {
+                const userId = document.getElementById('userId').value;
+                
+                showResult('Testing bot...', 'debug');
+                
+                const response = await fetch(`${BACKEND_URL}/api/telegram/test-message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        message: "What cakes do you have?"
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult(`✅ Bot test successful!\n\nResponse:\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Bot test failed:\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error testing bot:\n${error.message}`, 'error');
+            }
+        }
+        
+        function getBotInfo() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                showResult('❌ Please enter your bot token first', 'error');
+                return;
+            }
+            
+            const getMeUrl = `https://api.telegram.org/bot${token}/getMe`;
+            const getUpdatesUrl = `https://api.telegram.org/bot${token}/getUpdates`;
+            
+            showResult(`📋 BOT INFORMATION:\n\n` +
+                `🔧 Bot Details URL:\n   ${getMeUrl}\n\n` +
+                `📨 Messages URL:\n   ${getUpdatesUrl}\n\n` +
+                `📋 HOW TO TEST YOUR BOT:\n\n` +
+                `1️⃣ Find your bot on Telegram\n` +
+                `   • Visit the Bot Details URL above\n` +
+                `   • Look for "username": "@your_bot_name"\n` +
+                `   • Search for that username on Telegram\n\n` +
+                `2️⃣ Start a conversation\n` +
+                `   • Click "Start" or send any message\n` +
+                `   • Your bot will respond automatically!\n\n` +
+                `3️⃣ Check if it's working\n` +
+                `   • Visit the Messages URL above\n` +
+                `   • You should see your messages there\n\n` +
+                `🎉 THAT'S IT! Your bot will respond to ANY message automatically!`, 'warning');
+        }
+        
+        // Auto-fill user ID if available
+        document.addEventListener('DOMContentLoaded', function() {
+            // Try to get user ID from localStorage or other sources
+            const storedUserId = localStorage.getItem('userId');
+            if (storedUserId) {
+                document.getElementById('userId').value = storedUserId;
+            }
+        });
+    </script>
+</body>
+</html> 

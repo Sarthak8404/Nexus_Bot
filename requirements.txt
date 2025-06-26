@@ -1,0 +1,14 @@
+Flask==2.0.1
+flask-cors==3.0.10
+requests==2.26.0
+beautifulsoup4>=4.12.0
+google-generativeai==0.3.2
+python-dotenv>=1.0.0
+PyPDF2==3.0.1
+python-docx==1.1.2
+Werkzeug==2.3.7
+urllib3<1.27,>=1.21.1
+lxml==5.4.0
+html5lib==1.1
+supabase==1.2.0
+httpx>=0.24.0,<0.25.0 
